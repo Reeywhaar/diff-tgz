@@ -7,6 +7,7 @@ use workspace::{apply_patch, compute_patch, show_diff};
 #[derive(Parser)]
 #[command(
     name = "diff-tgz",
+    version,
     about = "Compute and apply VCDIFF binary patches between tgz archives"
 )]
 struct Cli {

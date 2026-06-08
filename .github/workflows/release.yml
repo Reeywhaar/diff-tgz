@@ -96,7 +96,7 @@ jobs:
         run: |
           VERSION=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
           TARGET="${{ matrix.target }}"
-          ARCHIVE="diff-tgz-${VERSION}-${TARGET}.tar.gz"
+          ARCHIVE="diff-tgz-${TARGET}.tar.gz"
           cp "target/${TARGET}/release/diff-tgz" diff-tgz
           tar czf "${ARCHIVE}" diff-tgz
           echo "ARCHIVE=${ARCHIVE}" >> "${GITHUB_ENV}"
@@ -149,7 +149,7 @@ jobs:
               aarch64-apple-darwin \
               x86_64-unknown-linux-gnu \
               aarch64-unknown-linux-gnu; do
-            FILE="artifacts/diff-tgz-${VERSION}-${TARGET}.tar.gz"
+            FILE="artifacts/diff-tgz-${TARGET}.tar.gz"
             SHA=$(sha256sum "${FILE}" | awk '{print $1}')
             VAR="SHA_$(echo "${TARGET}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')"
             echo "${VAR}=${SHA}" >> "${GITHUB_ENV}"

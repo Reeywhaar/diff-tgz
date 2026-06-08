@@ -18,7 +18,7 @@ repo = "Reeywhaar/diff-tgz"
 end
 
 def asset_url(repo, version, target)
-  "https://github.com/#{repo}/releases/download/#{version}/diff-tgz-#{version}-#{target}.tar.gz"
+  "https://github.com/#{repo}/releases/download/#{version}/diff-tgz-#{target}.tar.gz"
 end
 
 content = <<~RUBY

@@ -8,6 +8,32 @@ A command-line tool for diffing and patching `.tgz` archives.
 
 ## Installation
 
+### Homebrew
+
+```sh
+brew install Reeywhaar/tap/diff-tgz
+```
+
+### Pre-built binaries
+
+Download the latest release directly:
+
+| Platform | URL |
+|---|---|
+| macOS Apple Silicon | [diff-tgz-aarch64-apple-darwin.tar.gz](https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-aarch64-apple-darwin.tar.gz) |
+| macOS Intel | [diff-tgz-x86_64-apple-darwin.tar.gz](https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-x86_64-apple-darwin.tar.gz) |
+| Linux x86_64 | [diff-tgz-x86_64-unknown-linux-gnu.tar.gz](https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-x86_64-unknown-linux-gnu.tar.gz) |
+| Linux aarch64 | [diff-tgz-aarch64-unknown-linux-gnu.tar.gz](https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-aarch64-unknown-linux-gnu.tar.gz) |
+
+Or via shell (example for macOS Apple Silicon):
+
+```sh
+curl -L https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-aarch64-apple-darwin.tar.gz \
+  | tar xz && mv diff-tgz /usr/local/bin/
+```
+
+### From source
+
 ```sh
 cargo install --path .
 ```
