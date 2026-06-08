@@ -38,6 +38,36 @@ jobs:
         if: matrix.use_cross
         run: cargo install cross --locked
 
+      - name: Configure certificates
+        if: runner.os == 'macOS'
+        run: >
+          echo $DISTRIBUTION_CERT_BASE_64 | base64 --decode > cert.p12 &&
+          security create-keychain -p $KEYCHAIN_PASS $KEYCHAIN &&
+          security default-keychain -s ~/Library/Keychains/$KEYCHAIN-db &&
+          security set-keychain-settings $KEYCHAIN &&
+          security list-keychains -s $KEYCHAIN &&
+          security unlock-keychain -p $KEYCHAIN_PASS $KEYCHAIN &&
+          security import ./cert.p12 -k $KEYCHAIN -P $DISTRIBUTION_CERT_PASS -A -T /usr/bin/codesign -T /usr/bin/security &&
+          security set-key-partition-list -S apple-tool:,apple: -s -k $KEYCHAIN_PASS $KEYCHAIN &&
+          security find-identity -p codesigning -v
+        env:
+          KEYCHAIN: "def.keychain"
+          KEYCHAIN_PASS: "hmmmm"
+          DISTRIBUTION_CERT_BASE_64: ${{ secrets.DISTRIBUTION_CERT_BASE_64 }}
+          DISTRIBUTION_CERT_PASS: ${{ secrets.DISTRIBUTION_CERT_PASS }}
+
+      - name: Configure notarytool
+        if: runner.os == 'macOS'
+        run: >
+          xcrun notarytool store-credentials notarytool
+          --apple-id $APPLE_ID
+          --team-id $TEAM_ID
+          --password $NOTARY_TOOL_PASS
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          NOTARY_TOOL_PASS: ${{ secrets.NOTARY_TOOL_PASS }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+
       - name: Build
         shell: bash
         run: |
@@ -46,6 +76,20 @@ jobs:
           else
             cargo build --release --target ${{ matrix.target }}
           fi
+
+      - name: Sign binary
+        if: runner.os == 'macOS'
+        run: >
+          codesign -s "$SIGNING_IDENTITY" --deep -v -f -o runtime
+          target/${{ matrix.target }}/release/diff-tgz
+        env:
+          SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
+
+      - name: Notarize binary
+        if: runner.os == 'macOS'
+        run: |
+          zip notary.zip target/${{ matrix.target }}/release/diff-tgz
+          xcrun notarytool submit notary.zip --keychain-profile notarytool --wait
 
       - name: Package
         shell: bash
