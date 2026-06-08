@@ -25,11 +25,30 @@ Download the latest release directly:
 | Linux x86_64 | [diff-tgz-x86_64-unknown-linux-gnu.tar.gz](https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-x86_64-unknown-linux-gnu.tar.gz) |
 | Linux aarch64 | [diff-tgz-aarch64-unknown-linux-gnu.tar.gz](https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-aarch64-unknown-linux-gnu.tar.gz) |
 
-Or via shell (example for macOS Apple Silicon):
+Or via shell:
 
+**macOS (Apple Silicon):**
 ```sh
 curl -L https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-aarch64-apple-darwin.tar.gz \
   | tar xz && mv diff-tgz /usr/local/bin/
+```
+
+**macOS (Intel):**
+```sh
+curl -L https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-x86_64-apple-darwin.tar.gz \
+  | tar xz && mv diff-tgz /usr/local/bin/
+```
+
+**Linux (x86_64):**
+```sh
+curl -L https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-x86_64-unknown-linux-gnu.tar.gz \
+  | tar xz && sudo mv diff-tgz /usr/local/bin/
+```
+
+**Linux (aarch64):**
+```sh
+curl -L https://github.com/Reeywhaar/diff-tgz/releases/latest/download/diff-tgz-aarch64-unknown-linux-gnu.tar.gz \
+  | tar xz && sudo mv diff-tgz /usr/local/bin/
 ```
 
 ### From source
