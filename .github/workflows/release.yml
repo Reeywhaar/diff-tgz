@@ -1,0 +1,145 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            use_cross: true
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Install cross
+        if: matrix.use_cross
+        run: cargo install cross --locked
+
+      - name: Build
+        shell: bash
+        run: |
+          if [ "${{ matrix.use_cross }}" = "true" ]; then
+            cross build --release --target ${{ matrix.target }}
+          else
+            cargo build --release --target ${{ matrix.target }}
+          fi
+
+      - name: Package
+        shell: bash
+        run: |
+          VERSION=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
+          TARGET="${{ matrix.target }}"
+          ARCHIVE="diff-tgz-${VERSION}-${TARGET}.tar.gz"
+          cp "target/${TARGET}/release/diff-tgz" diff-tgz
+          tar czf "${ARCHIVE}" diff-tgz
+          echo "ARCHIVE=${ARCHIVE}" >> "${GITHUB_ENV}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ env.ARCHIVE }}
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: artifacts/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  bump_homebrew:
+    name: Bump Homebrew tap
+    runs-on: ubuntu-latest
+    needs: release
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Compute version and checksums
+        shell: bash
+        run: |
+          VERSION=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
+          echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+          for TARGET in \
+              x86_64-apple-darwin \
+              aarch64-apple-darwin \
+              x86_64-unknown-linux-gnu \
+              aarch64-unknown-linux-gnu; do
+            FILE="artifacts/diff-tgz-${VERSION}-${TARGET}.tar.gz"
+            SHA=$(sha256sum "${FILE}" | awk '{print $1}')
+            VAR="SHA_$(echo "${TARGET}" | tr '-' '_' | tr '[:lower:]' '[:upper:]')"
+            echo "${VAR}=${SHA}" >> "${GITHUB_ENV}"
+          done
+
+      - name: Set git identity
+        run: |
+          git config --global user.email "runner@example.com"
+          git config --global user.name "runner"
+
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          path: tap
+          repository: Reeywhaar/homebrew-tap
+          token: ${{ secrets.TAP_REPO_TOKEN }}
+
+      - name: Update formula
+        run: |
+          mkdir -p tap/Formula
+          ruby .github/update_formula.rb \
+            tap/Formula/diff-tgz.rb \
+            "${VERSION}" \
+            "${SHA_X86_64_APPLE_DARWIN}" \
+            "${SHA_AARCH64_APPLE_DARWIN}" \
+            "${SHA_X86_64_UNKNOWN_LINUX_GNU}" \
+            "${SHA_AARCH64_UNKNOWN_LINUX_GNU}"
+
+      - name: Commit and push
+        working-directory: tap
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
+        run: |
+          git add Formula/diff-tgz.rb
+          git commit -m "diff-tgz ${VERSION}"
+          git push origin main
+
